@@ -1,4 +1,4 @@
-# ```ros2_natnet``` Unofficial NatNet ROS2 Driver for Optitrack systems
+# ```ros2_natnet```
 
 
 [![foxy](https://github.com/yamaha-bps/ros2_natnet/actions/workflows/foxy.yaml/badge.svg)](https://github.com/yamaha-bps/ros2_natnet/actions/workflows/foxy.yaml) [![galactic](https://github.com/yamaha-bps/ros2_natnet/actions/workflows/galactic.yaml/badge.svg)](https://github.com/yamaha-bps/ros2_natnet/actions/workflows/galactic.yaml)
