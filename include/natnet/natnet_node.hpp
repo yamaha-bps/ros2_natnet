@@ -2,8 +2,8 @@
 // MIT License
 // https://github.com/yamaha-bps/cbr_drivers/blob/master/LICENSEt 2021 Cyberteam
 
-#ifndef NATNET_ROS2__NATNET_COMPONENT_HPP_
-#define NATNET_ROS2__NATNET_COMPONENT_HPP_
+#ifndef NATNET__NATNET_NODE_HPP_
+#define NATNET__NATNET_NODE_HPP_
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -11,20 +11,22 @@
 
 #include <memory>
 
+
 // forward-declarations
 struct sFrameOfMocapData;
 void NatnetDataCallback(sFrameOfMocapData * data, void * userData);
 
+namespace cbr
+{
 
 enum class State {OFF, UPDATING, STREAMING};
 
-
-class NatnetComponent : public rclcpp::Node
+class NatnetNode : public rclcpp::Node
 {
 public:
-  explicit NatnetComponent(const rclcpp::NodeOptions & opts);
+  explicit NatnetNode(const rclcpp::NodeOptions & opts);
 
-  ~NatnetComponent();
+  ~NatnetNode();
 
 private:
   State state_;
@@ -41,4 +43,6 @@ private:
   friend void NatnetDataCallback(sFrameOfMocapData *, void *);
 };
 
-#endif  // NATNET_ROS2__NATNET_COMPONENT_HPP_
+}  // namespace cbr
+
+#endif  // NATNET__NATNET_NODE_HPP_
