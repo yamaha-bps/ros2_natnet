@@ -7,8 +7,9 @@
   <maintainer email="john.b.mains@gmail.com">jbm</maintainer>
   <license>MIT</license>
 
-  <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>sophus</depend>
   <depend>yaml-cpp</depend>
 

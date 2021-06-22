@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
-project(natnet_ros2)
+project(natnet)
 
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(Sophus REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -28,16 +28,16 @@ set_target_properties(natnet_sdk PROPERTIES IMPORTED_LOCATION ${natnet_sdk_conte
 # TARGETS
 # ---------------------------------------------------------------------------------------
 
-add_library(natnet_component SHARED
-  src/natnet_component.cpp
+add_library(natnet_lib SHARED
+  src/natnet_node.cpp
 )
-target_include_directories(natnet_component
+target_include_directories(natnet_lib
 PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${geometry_msgs_INCLUDE_DIRS}
 )
-target_link_libraries(natnet_component
+target_link_libraries(natnet_lib
 PUBLIC
   natnet_sdk
   rclcpp::rclcpp
@@ -46,43 +46,29 @@ PUBLIC
   yaml-cpp
 )
 
-add_executable(natnet_node
-  src/natnet_node.cpp
-)
-target_link_libraries(natnet_node
-  natnet_component
+rclcpp_components_register_node(natnet_lib
+  PLUGIN     "cbr::NatnetNode"
+  EXECUTABLE natnet_node
 )
 
 # ---------------------------------------------------------------------------------------
 # INSTALLATION
 # ---------------------------------------------------------------------------------------
 
-include(GNUInstallDirs)
-
-# Header files
 install(
-  DIRECTORY    ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}
-  DESTINATION  ${CMAKE_INSTALL_INCLUDEDIR}
+  TARGETS               natnet_lib natnet_node
+  EXPORT                ${PROJECT_NAME}_targets
+  ARCHIVE DESTINATION   lib
+  LIBRARY DESTINATION   lib
 )
 
-# Third-party shared lib
 install(
   FILES                 ${natnet_sdk_content_SOURCE_DIR}/lib/libNatNetLibShared.so
-  DESTINATION           ${CMAKE_INSTALL_LIBDIR}
+  DESTINATION           lib
 )
 
-# Targets
 install(
-  TARGETS               natnet_component
-  EXPORT                ${PROJECT_NAME}_targets
-  LIBRARY DESTINATION   ${CMAKE_INSTALL_LIBDIR}
-)
-
-# Executable to run with "ros2 run"
-install(
-  TARGETS               natnet_node
-  EXPORT                ${PROJECT_NAME}_targets
-  DESTINATION           ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
+  DIRECTORY     include
 )
 
 # ---------------------------------------------------------------------------------------
@@ -93,9 +79,16 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  find_package(launch_testing_ament_cmake)
+  add_launch_test(test/bringup.test.py TIMEOUT 60)
 endif()
 
-find_package(ament_cmake QUIET)
-if(${ament_cmake_FOUND})
-  ament_package()
-endif()
+# ---------------------------------------------------------------------------------------
+# CMAKE CONFIGURATION
+# ---------------------------------------------------------------------------------------
+
+ament_export_targets(${PROJECT_NAME}_targets)
+
+ament_package()
+
