@@ -80,7 +80,6 @@ void NatnetDataCallback(sFrameOfMocapData * data, void * userData)
       );
 
       P_W_RB = P_W_RB * offset;
-      const Eigen::Quaterniond quat(offset.linear());
 
       auto msg = std::make_unique<geometry_msgs::msg::TransformStamped>();
 
@@ -90,6 +89,7 @@ void NatnetDataCallback(sFrameOfMocapData * data, void * userData)
       msg->transform.translation.x = P_W_RB.translation().x();
       msg->transform.translation.y = P_W_RB.translation().y();
       msg->transform.translation.z = P_W_RB.translation().z();
+      const Eigen::Quaterniond quat(P_W_RB.linear());
       msg->transform.rotation.w = quat.w();
       msg->transform.rotation.x = quat.x();
       msg->transform.rotation.y = quat.y();
@@ -324,7 +324,7 @@ bool NatnetNode::get_data_description()
       sRigidBodyDescription * p = dataDesc->arrDataDescriptions[i].Data.RigidBodyDescription;
 
       std::string name(p->szName);
-      Eigen::Isometry3d offset{};
+      Eigen::Isometry3d offset = Eigen::Isometry3d::Identity();
 
       auto rb_it = pImpl->name_to_offset.find(name);
       if (rb_it != pImpl->name_to_offset.end()) {
