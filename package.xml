@@ -10,7 +10,7 @@
   <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>sophus</depend>
+  <depend>eigen</depend>
   <depend>yaml-cpp</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(Sophus REQUIRED)
+find_package(Eigen3 3.3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 # ---------------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ PUBLIC
   natnet_sdk
   rclcpp::rclcpp
   ${geometry_msgs_LIBRARIES}
-  Sophus::Sophus
+  Eigen3::Eigen
   yaml-cpp
 )
 
