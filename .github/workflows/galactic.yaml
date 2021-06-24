@@ -1,0 +1,26 @@
+name: galactic
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-20.04
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-focal-ros-galactic-ros-base-latest
+    steps:
+      - name: Setup directories
+        run: mkdir -p ros_ws/src
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          path: ros_ws/src
+      - name: build and test
+        uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          target-ros2-distro: galactic
+          import-token: ${{ secrets.CI_TOKEN }}
+          package-name: natnet
