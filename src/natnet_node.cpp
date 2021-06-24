@@ -10,7 +10,7 @@
 
 #include <rclcpp/create_timer.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <sophus/se3.hpp>
+#include <Eigen/Geometry>
 #include <yaml-cpp/yaml.h>
 
 #include <filesystem>
@@ -33,10 +33,10 @@ struct NatnetNode::Impl
   std::atomic<bool> need_update;
 
   std::mutex desc_mtx;
-  std::unordered_map<int32_t, std::pair<std::string, Sophus::SE3d>> rigid_bodies;
+  std::unordered_map<int32_t, std::pair<std::string, Eigen::Isometry3d>> rigid_bodies;
   std::unordered_map<std::string, std::vector<std::string>> markers;
 
-  std::unordered_map<std::string, Sophus::SE3d> name_to_offset;
+  std::unordered_map<std::string, Eigen::Isometry3d> name_to_offset;
 };
 
 void NatnetDataCallback(sFrameOfMocapData * data, void * userData)
@@ -65,21 +65,22 @@ void NatnetDataCallback(sFrameOfMocapData * data, void * userData)
 
       const auto & [name, offset] = it->second;
 
-      Sophus::SE3d P_W_RB(
+      Eigen::Isometry3d P_W_RB(
+        Eigen::Translation3d(
+          data->RigidBodies[i].x,
+          data->RigidBodies[i].y,
+          data->RigidBodies[i].z
+        ) *
         Eigen::Quaterniond(
           data->RigidBodies[i].qw,
           data->RigidBodies[i].qx,
           data->RigidBodies[i].qy,
           data->RigidBodies[i].qz
-        ),
-        Sophus::Vector3d(
-          data->RigidBodies[i].x,
-          data->RigidBodies[i].y,
-          data->RigidBodies[i].z
         )
       );
 
-      P_W_RB *= offset;
+      P_W_RB = P_W_RB * offset;
+      const Eigen::Quaterniond quat(offset.linear());
 
       auto msg = std::make_unique<geometry_msgs::msg::TransformStamped>();
 
@@ -89,10 +90,10 @@ void NatnetDataCallback(sFrameOfMocapData * data, void * userData)
       msg->transform.translation.x = P_W_RB.translation().x();
       msg->transform.translation.y = P_W_RB.translation().y();
       msg->transform.translation.z = P_W_RB.translation().z();
-      msg->transform.rotation.w = P_W_RB.unit_quaternion().w();
-      msg->transform.rotation.x = P_W_RB.unit_quaternion().x();
-      msg->transform.rotation.y = P_W_RB.unit_quaternion().y();
-      msg->transform.rotation.z = P_W_RB.unit_quaternion().z();
+      msg->transform.rotation.w = quat.w();
+      msg->transform.rotation.x = quat.x();
+      msg->transform.rotation.y = quat.y();
+      msg->transform.rotation.z = quat.z();
 
       node->pub_trans_->publish(std::move(msg));
     }
@@ -176,17 +177,17 @@ NatnetNode::NatnetNode(const rclcpp::NodeOptions & opts)
     auto pose_yaml = YAML::LoadFile(pose_file);
     for (const auto & item : pose_yaml) {
       auto name = item["name"].as<std::string>();
-      Sophus::SE3d pose(
+      Eigen::Isometry3d pose(
+        Eigen::Translation3d(
+          item["x"].as<double>(),
+          item["y"].as<double>(),
+          item["z"].as<double>()
+        ) *
         Eigen::Quaterniond(
           item["qw"].as<double>(),
           item["qx"].as<double>(),
           item["qy"].as<double>(),
           item["qz"].as<double>()
-        ),
-        Sophus::Vector3d(
-          item["x"].as<double>(),
-          item["y"].as<double>(),
-          item["z"].as<double>()
         )
       );
       pImpl->name_to_offset[name] = pose;
@@ -323,13 +324,14 @@ bool NatnetNode::get_data_description()
       sRigidBodyDescription * p = dataDesc->arrDataDescriptions[i].Data.RigidBodyDescription;
 
       std::string name(p->szName);
-      Sophus::SE3d offset{};
+      Eigen::Isometry3d offset{};
 
       auto rb_it = pImpl->name_to_offset.find(name);
       if (rb_it != pImpl->name_to_offset.end()) {
         offset = rb_it->second;
       }
 
+      const Eigen::Quaterniond quat(offset.linear());
       RCLCPP_INFO(get_logger(), "Adding rigid body %s", name.c_str());
       RCLCPP_INFO(
         get_logger(), "Rigid body %s has associated offset %f %f %f %f %f %f %f ",
@@ -337,10 +339,10 @@ bool NatnetNode::get_data_description()
         name.c_str(), offset.translation().x(),
         name.c_str(), offset.translation().y(),
         name.c_str(), offset.translation().z(),
-        name.c_str(), offset.unit_quaternion().w(),
-        name.c_str(), offset.unit_quaternion().x(),
-        name.c_str(), offset.unit_quaternion().y(),
-        name.c_str(), offset.unit_quaternion().z()
+        name.c_str(), quat.w(),
+        name.c_str(), quat.x(),
+        name.c_str(), quat.y(),
+        name.c_str(), quat.z()
       );
 
       pImpl->rigid_bodies[p->ID] = {name, offset};
