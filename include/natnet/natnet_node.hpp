@@ -1,6 +1,6 @@
 // Copyright Yamaha 2021
 // MIT License
-// https://github.com/yamaha-bps/cbr_drivers/blob/master/LICENSEt 2021 Cyberteam
+// https://github.com/yamaha-bps/ros2_natnet/blob/master/LICENSE
 
 #ifndef NATNET__NATNET_NODE_HPP_
 #define NATNET__NATNET_NODE_HPP_
